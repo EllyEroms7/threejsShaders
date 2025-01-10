@@ -58,7 +58,6 @@ class SoundVisualizer {
       value: freq,
       overwrite: true,
     });
-    console.log(freq);
   }
 }
 

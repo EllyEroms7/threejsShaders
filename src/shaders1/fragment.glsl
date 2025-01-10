@@ -1,14 +1,13 @@
-export default /*glsl*/`
+export default /* glsl */ `
+uniform float uTime;
 
-precision mediump float;
-
-varying float v_points;
-uniform float uColour;
+varying vec3 vPosition;
+varying vec3 vNormal;
+varying vec2 vUv;
+varying float vDisplacement;
 
 void main() {
-gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
-gl_FragColor.r = 1.0 + sin(uColour);
-gl_FragColor.g = cos(uColour);
-gl_FragColor.b = - sin(uColour);
 
-}`
+gl_FragColor = vec4(vec2(vDisplacement), 1, 1.0);
+
+} `///

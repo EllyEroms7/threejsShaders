@@ -2,8 +2,8 @@ import { Timer } from "three/examples/jsm/Addons.js";
 import { Init } from "./init";
 import * as THREE from "three";
 // import GUI from "lil-gui";
-import fragmentShader from "./shaders1/fragment.glsl";
-import vertexShader from "./shaders1/vertex.glsl";
+import fragmentShader from "./shaders2/fragment.glsl";
+import vertexShader from "./shaders2/vertex.glsl";
 
 //wavy plane
 
