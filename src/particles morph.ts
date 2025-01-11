@@ -1,5 +1,6 @@
 import { Init } from "./init";
 import * as THREE from "three";
+import { Timer } from "three/examples/jsm/Addons.js";
 import vertexShader from "./shaders4/vertex.glsl";
 import fragmentShader from "./shaders4/fragment.glsl";
 
@@ -17,19 +18,17 @@ three.light(1.4, {
   z: 0,
 });
 
-three.camera.position.set(0, 0, 2);
-// three.cube(1.1, 0xff532f);
+three.camera.position.set(0, 0, 1.6);
 
 /**
  * PARTICLES
  */
+const radius = 0.7;
 
-const quantity = 7500;
+const quantity = 20000;
 const particleGeo = new THREE.BufferGeometry();
 
 //custom shapes point generation
-
-const radius = 0.7;
 
 //SPHERE
 const sphereParticles = (radius: number, particleCount: number) => {
@@ -51,59 +50,6 @@ const sphereParticles = (radius: number, particleCount: number) => {
     points[i * 3] = x;
     points[i * 3 + 1] = y;
     points[i * 3 + 2] = z;
-  }
-
-  return points;
-};
-
-//CONE
-const coneParticles = (
-  radius: number,
-  height: number,
-  particleCount: number,
-  baseParticleCount: number
-) => {
-  // Create a Float32Array with a size for both the cone and base points
-  const points = new Float32Array((particleCount + baseParticleCount) * 3);
-
-  // Generate points for the cone
-  for (let i = 0; i < particleCount; i++) {
-    // Random height along the cone's axis
-    const h = Math.random() * height;
-
-    // Scale the radius at this height (linear interpolation from base to tip)
-    const r = (1 - h / height) * radius;
-
-    // Generate random polar coordinates
-    const phi = Math.random() * Math.PI * 2; // Azimuthal angle [0, 2π]
-
-    // Convert polar coordinates to Cartesian coordinates
-    const x = r * Math.cos(phi);
-    const z = r * Math.sin(phi);
-    const y = h; // Height along the cone's axis
-
-    // Store the coordinates in the Float32Array
-    points[i * 3] = x;
-    points[i * 3 + 1] = y;
-    points[i * 3 + 2] = z;
-  }
-
-  // Generate points for the base
-  for (let i = 0; i < baseParticleCount; i++) {
-    // Random radius within the base circle
-    const r = Math.sqrt(Math.random()) * radius; // Square root for uniform distribution
-    const phi = Math.random() * Math.PI * 2; // Azimuthal angle [0, 2π]
-
-    // Convert polar coordinates to Cartesian coordinates
-    const x = r * Math.cos(phi);
-    const z = r * Math.sin(phi);
-    const y = 0; // Base is at height 0
-
-    // Store the coordinates in the Float32Array
-    const baseIndex = (particleCount + i) * 3;
-    points[baseIndex] = x;
-    points[baseIndex + 1] = y;
-    points[baseIndex + 2] = z;
   }
 
   return points;
@@ -168,15 +114,116 @@ const torusParticles = (
   return points;
 };
 
-let points = torusParticles(0.7, 0.4, 64, quantity);
+const torusPoints = torusParticles(radius, 0.4, 64, quantity * 4);
+const cubePoints = cubeParticles(radius, quantity * 7);
+const spherePoints = sphereParticles(radius * 1.5, quantity * 2);
 
-particleGeo.setAttribute("position", new THREE.BufferAttribute(points, 3));
+particleGeo.setAttribute(
+  "torusPoints",
+  new THREE.BufferAttribute(torusPoints, 3)
+);
+
+particleGeo.setAttribute(
+  "spherePoints",
+  new THREE.BufferAttribute(spherePoints, 3)
+);
+
+particleGeo.setAttribute(
+  "cubePoints",
+  new THREE.BufferAttribute(cubePoints, 3)
+);
+
+particleGeo.setAttribute("position", new THREE.BufferAttribute(torusPoints, 3));
 
 const particleMat = new THREE.ShaderMaterial({
   vertexShader,
   fragmentShader,
+  uniforms: {
+    morphFactor1: { value: 0.0 }, // Interpolation factor between torus and cube
+    morphFactor2: { value: 0.0 }, // Interpolation factor between cube and sphere
+    morphFactor3: { value: 0.0 }, // Interpolation factor between sphere and cone
+    time: { value: 0.0 },
+  },
   transparent: true,
 });
 
+particleMat.depthWrite = false; // Disable writing to the depth buffer
+particleMat.depthTest = true; // Enable depth testing
+particleMat.blending = THREE.AdditiveBlending; // Use additive blending for glowing effect
+particleMat.side = THREE.DoubleSide; // Render both sides of the particles
+
 const particles = new THREE.Points(particleGeo, particleMat);
 three.addToScene(particles);
+
+/**
+ * CAMERA CONTROLLER
+ */
+const cube = three.cube(0.1, 0xffffff, 0);
+const camera = three.camera;
+cube.add(camera);
+
+// Animation Loop
+let morphFactor1 = 0.0;
+let morphFactor2 = 0.0;
+let morphFactor3 = 0.0;
+
+let morphDirection1 = 1;
+let morphDirection2 = 1;
+let morphDirection3 = 1;
+
+let currentMorph = 1; // Current morph stage (1, 2, or 3)
+let delayTime = 1200; // Delay in milliseconds
+let lastSwitchTime = Date.now();
+
+const timer: Timer = new Timer();
+const animate = (timestamp: number) => {
+  requestAnimationFrame(animate);
+  const delta = three.setTimer(timer, timestamp);
+
+  let currentTime = Date.now();
+  if (currentTime - lastSwitchTime > delayTime) {
+    three.renderer.render(three.scene, three.camera);
+    lastSwitchTime = currentTime;
+  }
+
+  // Update morph factors based on the current morph stage
+  if (currentMorph === 1) {
+    morphFactor1 += morphDirection1 * 0.01;
+
+    if (morphFactor1 >= 1.0 || morphFactor1 <= 0.0) {
+      morphDirection1 *= -1; // Reverse direction
+      currentMorph = 2; // Move to the next morph stage
+      lastSwitchTime = currentTime; // Reset the delay timer
+    }
+  } else if (currentMorph === 2) {
+    morphFactor2 += morphDirection2 * 0.01;
+    if (morphFactor2 >= 1.0 || morphFactor2 <= 0.0) {
+      morphDirection2 *= -1; // Reverse direction
+      currentMorph = 3; // Move to the next morph stage
+      lastSwitchTime = currentTime; // Reset the delay timer
+    }
+  } else if (currentMorph === 3) {
+    morphFactor3 += morphDirection3 * 0.01;
+
+    if (morphFactor3 >= 1.0 || morphFactor3 <= 0.0) {
+      morphDirection3 *= -1; // Reverse direction
+      currentMorph = 1; // Loop back to the first morph stage
+      lastSwitchTime = currentTime; // Reset the delay timer
+    }
+  }
+
+  //assign the values to the shaders on every frame
+  particleMat.uniforms.morphFactor1.value = morphFactor1;
+  particleMat.uniforms.morphFactor2.value = morphFactor2;
+  particleMat.uniforms.morphFactor3.value = morphFactor3;
+  particleMat.uniforms.time.value += delta * 0.3;
+
+  // particles.rotation.y += delta * 0.3 * 0.31;
+  // particles.rotation.x += (Math.random() - 0.5) * delta * 0.3 * 0.31;
+  // particles.rotation.z += delta * 1.5 * 0.31;
+
+  cube.rotation.y += delta * 0.2;
+  cube.rotation.x -= delta * 0.3;
+};
+
+requestAnimationFrame(animate);

@@ -101,12 +101,18 @@ export class Init {
   }
 
   //create a test cube
-  public cube(size: number, colour: THREE.ColorRepresentation): THREE.Mesh {
+  public cube(
+    size: number,
+    colour: THREE.ColorRepresentation,
+    opacity: number = 1
+  ): THREE.Mesh {
     const cubeGeo = new THREE.BoxGeometry(size, size, size);
     const cubeMat = new THREE.MeshStandardMaterial({
       color: colour,
       metalness: 0.3,
       roughness: 0.5,
+      transparent: true,
+      opacity: opacity,
     });
     const cube = new THREE.Mesh(cubeGeo, cubeMat);
     this.scene.add(cube);
