@@ -19,7 +19,7 @@ vec3 position2 = mix(torusPoints, spherePoints, morphFactor2);
 vec3 mixedPosition = mix(position1, position2, morphFactor3);
 
   // Set the point size and position
-gl_PointSize = 1.0;
+gl_PointSize = 1.1;
 gl_Position = projectionMatrix * modelViewMatrix * vec4(mixedPosition, 1.0);
 
 vPosition = mixedPosition;

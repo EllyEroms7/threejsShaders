@@ -114,9 +114,9 @@ const torusParticles = (
   return points;
 };
 
-const torusPoints = torusParticles(radius, 0.4, 64, quantity * 4);
-const cubePoints = cubeParticles(radius, quantity * 7);
-const spherePoints = sphereParticles(radius * 1.5, quantity * 2);
+const torusPoints = torusParticles(radius, 0.4, 64, quantity * 3);
+const cubePoints = cubeParticles(radius, quantity * 6);
+const spherePoints = sphereParticles(radius * 1.5, quantity * 1.5);
 
 particleGeo.setAttribute(
   "torusPoints",
@@ -158,9 +158,37 @@ three.addToScene(particles);
 /**
  * CAMERA CONTROLLER
  */
-const cube = three.cube(0.1, 0xffffff, 0);
+const cube = three.cube(0.01, 0x00000, 0);
 const camera = three.camera;
 cube.add(camera);
+
+/**
+ * Stars
+ */
+const starQuantity = 13000;
+const starPoints = new Float32Array(starQuantity * 3);
+
+const starGeo = new THREE.BufferGeometry();
+const starMat = new THREE.PointsMaterial({
+  size: 0.01,
+  sizeAttenuation: true,
+  depthTest: true,
+  alphaTest: 1,
+  blending: THREE.AdditiveBlending,
+});
+
+for (let i = 0; i < starPoints.length; i++) {
+  starPoints[i] = Math.random() * 30;
+}
+
+starGeo.setAttribute("position", new THREE.BufferAttribute(starPoints, 3));
+const star = new THREE.Points(starGeo, starMat);
+
+star.position.x = -15;
+star.position.z = -15;
+star.position.y = -15;
+
+three.addToScene(star);
 
 // Animation Loop
 let morphFactor1 = 0.0;
@@ -172,7 +200,7 @@ let morphDirection2 = 1;
 let morphDirection3 = 1;
 
 let currentMorph = 1; // Current morph stage (1, 2, or 3)
-let delayTime = 1200; // Delay in milliseconds
+let delayTime = 1500; // Delay in milliseconds
 let lastSwitchTime = Date.now();
 
 const timer: Timer = new Timer();
@@ -188,7 +216,7 @@ const animate = (timestamp: number) => {
 
   // Update morph factors based on the current morph stage
   if (currentMorph === 1) {
-    morphFactor1 += morphDirection1 * 0.01;
+    morphFactor1 += morphDirection1 * 0.005;
 
     if (morphFactor1 >= 1.0 || morphFactor1 <= 0.0) {
       morphDirection1 *= -1; // Reverse direction
@@ -196,14 +224,14 @@ const animate = (timestamp: number) => {
       lastSwitchTime = currentTime; // Reset the delay timer
     }
   } else if (currentMorph === 2) {
-    morphFactor2 += morphDirection2 * 0.01;
+    morphFactor2 += morphDirection2 * 0.005;
     if (morphFactor2 >= 1.0 || morphFactor2 <= 0.0) {
       morphDirection2 *= -1; // Reverse direction
       currentMorph = 3; // Move to the next morph stage
       lastSwitchTime = currentTime; // Reset the delay timer
     }
   } else if (currentMorph === 3) {
-    morphFactor3 += morphDirection3 * 0.01;
+    morphFactor3 += morphDirection3 * 0.005;
 
     if (morphFactor3 >= 1.0 || morphFactor3 <= 0.0) {
       morphDirection3 *= -1; // Reverse direction

@@ -17,7 +17,7 @@ float b = 0.5 + 0.5 * sin(vUv.x * 10.0 + vUv.y * 10.0 + morphFactor3); // Blue c
  // Combine the channels into a final colour
 vec3 colour = vec3(r, g, b);
 
-  // Set the fragment color
+  // Set the fragment colour
 gl_FragColor = vec4(colour, 1.0);
 }
 `
